@@ -66,7 +66,7 @@ class Config:
     # ==================== 声音配置 ====================
     sound_enabled: bool = True
     sound_dir: str = "assets/sounds"
-    sound_files: List[str] = field(default_factory=lambda: ["ostrich.wav", "ostrich2.wav"])
+    sound_files: List[str] = field(default_factory=lambda: ["ostrich.wav"])
     sound_min_interval: float = 7.2
     sound_max_interval: float = 15.0
     sound_burst_min: int = 1

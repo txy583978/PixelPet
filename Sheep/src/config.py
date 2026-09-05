@@ -66,7 +66,7 @@ class Config:
     # ==================== 声音配置 ====================
     sound_enabled: bool = True
     sound_dir: str = "assets/sounds"
-    sound_files: List[str] = field(default_factory=lambda: ["sheep.wav", "sheep2.wav"])
+    sound_files: List[str] = field(default_factory=lambda: ["sheep.wav"])
     sound_min_interval: float = 9.0
     sound_max_interval: float = 18.0
     sound_burst_min: int = 1
