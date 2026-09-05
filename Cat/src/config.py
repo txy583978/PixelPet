@@ -1,0 +1,110 @@
+"""
+动物桌宠统一配置 - 猫（哈基米）
+"""
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple
+
+
+@dataclass
+class Config:
+    # ==================== Sprite 配置 ====================
+    sprite_path: str = "assets/cat.png"
+    frame_width: int = 32
+    frame_height: int = 32
+    sprite_scale: float = 1.2
+    sprite_cols: int = 4
+    sprite_rows: int = 8
+
+    # ==================== 帧行映射（标准行顺序） ====================
+    # row0=正面(下), row1=朝右, row2=背面(上), row3=朝左, row4=吃, row5=睡, row6+=其他
+    # 羊式逻辑：只用朝右帧(row1)，左方向翻转
+    frame_map: Dict[str, Dict[int, int]] = field(default_factory=lambda: {
+        "walk":  {0: 1, 1: 3, 2: 6, 3: 7},
+        "idle":  {0: 1, 1: 3, 2: 6, 3: 7},
+        "sleep": {0: 0, 1: 0, 2: 0, 3: 0},
+    })
+
+    frame_counts: Dict[str, int] = field(default_factory=lambda: {
+        "walk": 4, "idle": 1, "sleep": 1,
+    })
+
+    anim_fps: Dict[str, float] = field(default_factory=lambda: {
+        "walk": 8.0, "idle": 1.0, "sleep": 1.0,
+    })
+
+    # ==================== 朝向标记 ====================
+    heading_markers: Dict[int, Tuple[int, int, int, int]] = field(default_factory=lambda: {
+        0: (22, 17, 13, 15),   # 右
+        1: (9, 17, 19, 15),    # 左
+        2: (16, 21, 16, 16),   # 下
+        3: (16, 16, 16, 22),   # 上
+    })
+
+    flip_h_directions: set = field(default_factory=lambda: set())
+
+    # ==================== 锚点 ====================
+    anchor_x: int = 16
+    anchor_y: int = 30
+
+    # ==================== 运动参数 ====================
+    walk_speed: float = 45.0
+    direction_cooldown: float = 2.0
+
+    # ==================== 状态持续时间 ====================
+    min_walk_time: float = 4.0
+    max_walk_time: float = 10.0
+    min_idle_time: float = 3.0
+    max_idle_time: float = 6.0
+    eat_duration: float = 30.0
+    sleep_duration: float = 30.0
+
+    eat_chance: float = 0.0
+    sleep_chance: float = 0.05
+
+    # ==================== 声音配置 ====================
+    sound_enabled: bool = True
+    sound_dir: str = "assets/sounds"
+    sound_files: List[str] = field(default_factory=lambda: ["meow.wav", "meow2.wav", "purr.wav"])
+    sound_min_interval: float = 12.0
+    sound_max_interval: float = 24.0
+    sound_volume: float = 0.5
+
+    # ==================== 交互配置 ====================
+    quit_alpha_increment: float = 0.0033
+    jump_velocity: float = 300.0
+    gravity: float = 800.0
+
+    # ==================== 显示配置 ====================
+    shadow_alpha: int = 60
+
+    # ==================== 初始位置 ====================
+    spawn_random: bool = True
+    spawn_x_ratio: float = 0.5
+    spawn_y_ratio: float = 0.7
+
+    def get_frame_row(self, action: str, direction: int) -> int:
+        action_map = self.frame_map.get(action, self.frame_map["walk"])
+        return action_map.get(direction, action_map[0])
+
+    def get_frame_count(self, action: str) -> int:
+        return self.frame_counts.get(action, 4)
+
+    def get_anim_fps(self, action: str) -> float:
+        return self.anim_fps.get(action, 8.0)
+
+    def validate(self) -> List[str]:
+        errors = []
+        for action, dmap in self.frame_map.items():
+            for d, row in dmap.items():
+                if row < 0 or row >= self.sprite_rows:
+                    errors.append(f"frame_map[{action}][{d}]={row} 超出范围 [0,{self.sprite_rows-1}]")
+        for action, cnt in self.frame_counts.items():
+            if cnt < 1 or cnt > self.sprite_cols:
+                errors.append(f"frame_counts[{action}]={cnt} 超出范围 [1,{self.sprite_cols}]")
+        for d, (hx, hy, tx, ty) in self.heading_markers.items():
+            for name, val in [("head_x", hx), ("head_y", hy), ("tail_x", tx), ("tail_y", ty)]:
+                if val < 0 or val >= max(self.frame_width, self.frame_height):
+                    errors.append(f"heading_markers[{d}].{name}={val} 超出帧范围")
+        if self.eat_chance + self.sleep_chance > 1.0:
+            errors.append(f"eat_chance({self.eat_chance}) + sleep_chance({self.sleep_chance}) > 1.0")
+        return errors
